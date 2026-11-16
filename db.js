@@ -46,6 +46,32 @@ if (!db.prepare('PRAGMA table_info(eventos)').all().some((c) => c.name === 'data
   db.exec('ALTER TABLE eventos ADD COLUMN data_fim TEXT');
 }
 
+// Lista de compras compartilhada.
+db.exec(`
+CREATE TABLE IF NOT EXISTS compras (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  nome         TEXT NOT NULL,
+  quantidade   REAL NOT NULL DEFAULT 1,
+  unidade      TEXT NOT NULL DEFAULT 'un',
+  categoria    TEXT NOT NULL DEFAULT 'Outros',
+  obs          TEXT,
+  comprado     INTEGER NOT NULL DEFAULT 0,
+  criado_por   INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+  comprado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+  criado_em    TEXT NOT NULL DEFAULT (datetime('now')),
+  atualizado_em TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Tudo o que já entrou na lista: vira sugestão (com a última unidade e seção usadas).
+CREATE TABLE IF NOT EXISTS compras_historico (
+  nome      TEXT PRIMARY KEY COLLATE NOCASE,
+  unidade   TEXT NOT NULL,
+  categoria TEXT NOT NULL,
+  usos      INTEGER NOT NULL DEFAULT 1,
+  ultimo    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+`);
+
 function hashSenha(senha) {
   const sal = crypto.randomBytes(16);
   const h = crypto.scryptSync(String(senha), sal, 64);

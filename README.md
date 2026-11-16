@@ -1,6 +1,6 @@
 # Agenda da Família
 
-Agenda compartilhada do casal, com a identidade visual da AR Consultoria (marinho `#17397d`, azul `#005ea4`,
+Agenda e lista de compras compartilhadas do casal, com a identidade visual da AR Consultoria (marinho `#17397d`, azul `#005ea4`,
 ciano `#20b8d5`, azul-claro `#b3d8eb`, fonte Montserrat). É um aplicativo web **instalável no celular** (PWA):
 abre em tela cheia pelo ícone, como o Vértice.
 
@@ -17,6 +17,11 @@ Mesma base do sistema da AR: Node.js + SQLite nativo (`node:sqlite`), HTML/CSS/J
 - **Vários dias** (praia, férias, viagem): preencha "Até" com o último dia. No calendário vira uma faixa contínua
   de um dia ao outro (no celular, uma barra abaixo dos números); no painel aparece "dia 2 de 3" e o período (20/11 a 22/11).
   O horário de início vale para o primeiro dia e o de fim para o último.
+- **Lista de compras** (aba Compras): item, quantidade (com − e +, aceita "1,5"), unidade (un, kg, g, L, pct…) e
+  seção do mercado. A lista se organiza por seção, na ordem de um supermercado. Toque no círculo para pôr no carrinho;
+  "Limpar comprados" tira da lista o que já foi pego. Pedir de novo um item que já está na lista soma a quantidade.
+  Tudo o que já entrou na lista vira sugestão, com a unidade e a seção da última vez. Mostra quem pediu e quem pegou.
+  Segurar o ícone do app no Android abre direto a lista (atalho).
 - **Filtro** por pessoa (os compromissos "juntos" aparecem nos dois).
 - **Duas contas** (uma para cada um). O que um marca, o outro vê: o app atualiza ao voltar para ele e a cada minuto.
 - **Ajustes** (ícone de pessoa): nomes que aparecem na agenda, trocar a própria senha e sair.
@@ -62,8 +67,8 @@ Sem as variáveis, as contas de teste são `marido` e `esposa`, ambas com a senh
 
 ## Estrutura
 
-- `server.js`: login, sessão, API de compromissos (`/api/eventos`), nomes e senha.
-- `db.js`: banco SQLite (`usuarios`, `eventos`).
-- `public/index.html`, `public/css/app.css`, `public/js/app.js`: a interface.
+- `server.js`: login, sessão, API de compromissos (`/api/eventos`), lista de compras (`/api/compras`), nomes e senha.
+- `db.js`: banco SQLite (`usuarios`, `eventos`, `compras`, `compras_historico`).
+- `public/index.html`, `public/css/app.css`, `public/js/app.js` (agenda), `public/js/compras.js` (lista de compras): a interface.
 - `public/manifest.webmanifest`, `public/sw.js`, `public/icons/`: o que torna o app instalável.
 - `test/api.test.js`: testes da API (`npm test`).

@@ -172,7 +172,28 @@
       aviso(cache ? 'Sem internet. Mostrando a última versão salva neste aparelho.' : e.message);
     }
     render();
+    window.AG.compras?.carregar();
   }
+
+  // ---------- abas: Agenda e Compras ----------
+  function mostrarAba(aba) {
+    const compras = aba === 'compras';
+    st.aba = compras ? 'compras' : 'agenda';
+    document.body.dataset.aba = st.aba;
+    $('#vistaAgenda').hidden = compras;
+    $('#vistaCompras').hidden = !compras;
+    $('.nav-mes').hidden = compras;
+    $('#novo').hidden = compras;
+    $('#tituloCompras').hidden = !compras;
+    document.querySelectorAll('.aba').forEach((b) => {
+      if (b.dataset.aba === st.aba) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+    });
+    const hash = compras ? '#compras' : '';
+    if (location.hash !== hash) history.replaceState(null, '', hash || location.pathname);
+    window.scrollTo(0, 0);
+  }
+  document.querySelectorAll('.aba').forEach((b) => b.addEventListener('click', () => mostrarAba(b.dataset.aba)));
+  window.addEventListener('hashchange', () => mostrarAba(location.hash === '#compras' ? 'compras' : 'agenda'));
 
   // ---------- login ----------
   function mostrarLogin() {
@@ -189,6 +210,7 @@
   async function iniciarApp() {
     $('#telaLogin').hidden = true;
     $('#telaApp').hidden = false;
+    mostrarAba(location.hash === '#compras' ? 'compras' : 'agenda');
     render();
     await carregar();
     if (st.eu?.senhaPadrao) toast('Troque a senha inicial em Ajustes (ícone de pessoa).');
@@ -283,12 +305,13 @@
   });
 
   // ---------- ajustes ----------
-  $('#btnAjustes').addEventListener('click', () => {
+  const abrirAjustes = () => {
     $('#nA').value = st.nomes.a; $('#nB').value = st.nomes.b;
     $('#sAtual').value = ''; $('#sNova').value = ''; $('#sErro').textContent = '';
     $('#quemSou').textContent = st.eu ? `Você entrou como ${st.eu.nome} (usuário “${st.eu.login}”).` : '';
     $('#veuAjustes').hidden = false;
-  });
+  };
+  document.querySelectorAll('[data-ajustes]').forEach((b) => b.addEventListener('click', abrirAjustes));
   $('#formNomes').addEventListener('submit', async (ev) => {
     ev.preventDefault();
     try {
@@ -309,7 +332,8 @@
   });
   $('#sair').addEventListener('click', async () => {
     try { await api('POST', '/api/logout'); } catch {}
-    try { localStorage.removeItem(CACHE_KEY); localStorage.removeItem('agenda:eu'); } catch {}
+    try { ['agenda:compras', CACHE_KEY, 'agenda:eu'].forEach((k) => localStorage.removeItem(k)); } catch {}
+    window.AG.compras?.limpar();
     st.eventos = []; st.carregado = false;
     mostrarLogin();
   });
@@ -370,8 +394,11 @@
 
   if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
 
+  // Compartilhado com a lista de compras (compras.js).
+  window.AG = { api, toast, esc, guardar, ler, estado: st, nomeDe };
+
   // ---------- início ----------
-  (async () => {
+  const iniciar = async () => {
     try {
       aplicarEu(await api('GET', '/api/eu'));
       iniciarApp();
@@ -381,5 +408,7 @@
       const eu = ler('agenda:eu');
       if (eu) { st.eu = eu; st.nomes = eu.nomes; iniciarApp(); } else { mostrarLogin(); $('#lErro').textContent = e.message; }
     }
-  })();
+  };
+  // Espera o compras.js (carregado depois deste arquivo) se registrar.
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar); else iniciar();
 })();

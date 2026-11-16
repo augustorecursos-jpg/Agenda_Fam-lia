@@ -9,7 +9,7 @@ process.env.DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'agenda-teste-'));
 process.env.SENHA_1 = 'senha-um';
 process.env.SENHA_2 = 'senha-dois';
 process.env.LOGIN_2 = 'ela';
-const { app, lerEvento } = require('../server');
+const { app, lerEvento, lerItem } = require('../server');
 
 let servidor, base;
 before(() => new Promise((ok) => { servidor = app.listen(0, () => { base = `http://localhost:${servidor.address().port}`; ok(); }); }));
@@ -107,6 +107,56 @@ test('troca de senha derruba a sessão antiga', async () => {
   assert.strictEqual((await outroAparelho('GET', '/api/eventos')).status, 401);
 });
 
+test('validação dos itens de compra', () => {
+  assert.ok(lerItem({ quantidade: 2 }).erro);
+  assert.ok(lerItem({ nome: 'Arroz', quantidade: '0' }).erro);
+  assert.ok(lerItem({ nome: 'Arroz', quantidade: 'muito' }).erro);
+  const { ok } = lerItem({ nome: '  queijo  ', quantidade: '1,5', unidade: 'kg', categoria: 'Frios e laticínios' });
+  assert.deepStrictEqual([ok.nome, ok.quantidade, ok.unidade, ok.categoria], ['Queijo', 1.5, 'kg', 'Frios e laticínios']);
+  const padrao = lerItem({ nome: 'Pão', unidade: 'tonelada', categoria: 'Joias' }).ok;
+  assert.deepStrictEqual([padrao.quantidade, padrao.unidade, padrao.categoria], [1, 'un', 'Outros']);
+});
+
+test('lista de compras compartilhada', async () => {
+  assert.strictEqual((await cliente()('GET', '/api/compras')).status, 401);
+  const arroz = await ele('POST', '/api/compras', { nome: 'Arroz', quantidade: 2, unidade: 'kg', categoria: 'Mercearia' });
+  assert.strictEqual(arroz.status, 201);
+  await ela('POST', '/api/compras', { nome: 'Leite', quantidade: 6, unidade: 'L', categoria: 'Frios e laticínios' });
+
+  // Pedir de novo o mesmo item soma a quantidade.
+  const de_novo = await ela('POST', '/api/compras', { nome: 'arroz', quantidade: 1, unidade: 'kg' });
+  assert.strictEqual(de_novo.dados.somado, true);
+  assert.strictEqual(de_novo.dados.quantidade, 3);
+
+  let d = (await ele('GET', '/api/compras')).dados;
+  assert.deepStrictEqual(d.itens.map((i) => i.nome).sort(), ['Arroz', 'Leite']);
+  assert.ok(d.categorias.includes('Hortifrúti'));
+  assert.ok(d.sugestoes.some((s) => s.nome === 'Arroz' && s.unidade === 'kg'));
+
+  // Ela pega o arroz; ele vê no carrinho.
+  const pego = await ela('POST', `/api/compras/${arroz.dados.id}/comprado`, { comprado: true });
+  assert.strictEqual(pego.dados.comprado, true);
+  d = (await ele('GET', '/api/compras')).dados;
+  assert.strictEqual(d.itens.find((i) => i.nome === 'Arroz').comprado, true);
+
+  // Item já no carrinho não recebe soma: entra de novo na lista.
+  const outro = await ele('POST', '/api/compras', { nome: 'Arroz', quantidade: 1, unidade: 'kg' });
+  assert.strictEqual(outro.status, 201);
+
+  const ed = await ele('PUT', `/api/compras/${outro.dados.id}`, { nome: 'Arroz integral', quantidade: '1', unidade: 'pct', categoria: 'Mercearia', obs: 'tipo 1' });
+  assert.deepStrictEqual([ed.dados.nome, ed.dados.unidade, ed.dados.obs], ['Arroz integral', 'pct', 'tipo 1']);
+
+  const limpo = await ele('POST', '/api/compras/limpar');
+  assert.strictEqual(limpo.dados.removidos, 1);
+  d = (await ela('GET', '/api/compras')).dados;
+  assert.deepStrictEqual(d.itens.map((i) => i.nome).sort(), ['Arroz integral', 'Leite']);
+
+  assert.strictEqual((await ela('DELETE', `/api/compras/${outro.dados.id}`)).status, 200);
+  assert.strictEqual((await ela('DELETE', `/api/compras/${outro.dados.id}`)).status, 404);
+  // O que já foi comprado continua como sugestão.
+  assert.ok((await ela('GET', '/api/compras')).dados.sugestoes.some((s) => s.nome === 'Arroz'));
+});
+
 test('app instalável: manifesto, service worker e ícones', async () => {
   const anon = cliente();
   const m = await anon('GET', '/manifest.webmanifest');
@@ -115,6 +165,8 @@ test('app instalável: manifesto, service worker e ícones', async () => {
   assert.strictEqual(manifesto.display, 'standalone');
   for (const i of manifesto.icons) assert.strictEqual((await anon('GET', i.src)).status, 200);
   assert.strictEqual((await anon('GET', '/sw.js')).status, 200);
+  assert.strictEqual((await anon('GET', '/js/compras.js')).status, 200);
+  assert.ok(manifesto.shortcuts.some((a) => a.url === '/#compras'));
   assert.strictEqual((await anon('GET', '/icons/apple-touch-icon.png')).status, 200);
   assert.strictEqual((await anon('GET', '/healthz')).dados, 'ok');
 });

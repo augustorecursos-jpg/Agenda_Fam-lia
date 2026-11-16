@@ -1,5 +1,5 @@
 // Agenda da Família · servidor HTTP
-// Login das duas pessoas da casa, compromissos (com repetição) e o aplicativo instalável (PWA).
+// Login das duas pessoas da casa, compromissos (com repetição e vários dias), lista de compras e o aplicativo instalável (PWA).
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
@@ -211,6 +211,100 @@ app.delete('/api/eventos/:id', exigirLogin, (req, res) => {
   res.json({ ok: true });
 });
 
+// ---------- lista de compras ----------
+const CATEGORIAS = ['Hortifrúti', 'Açougue e peixaria', 'Padaria', 'Frios e laticínios', 'Mercearia', 'Bebidas',
+  'Congelados', 'Limpeza', 'Higiene', 'Farmácia', 'Pet', 'Outros'];
+const UNIDADES = ['un', 'kg', 'g', 'L', 'ml', 'pct', 'cx', 'dz', 'lata', 'garrafa'];
+
+/** Quantidade em formato brasileiro ("1,5") ou número. */
+function quantidade(v) {
+  if (v === undefined || v === null || v === '') return 1;
+  const n = typeof v === 'number' ? v : Number(String(v).replace(/\s/g, '').replace(',', '.'));
+  return Number.isFinite(n) && n > 0 && n <= 9999 ? Math.round(n * 1000) / 1000 : null;
+}
+
+function lerItem(corpo = {}) {
+  const nome = texto(corpo.nome, 80);
+  if (!nome) return { erro: 'Informe o item.' };
+  const qtd = quantidade(corpo.quantidade);
+  if (qtd === null) return { erro: 'Informe uma quantidade entre 0 e 9999.' };
+  return { ok: {
+    nome: nome.charAt(0).toUpperCase() + nome.slice(1), quantidade: qtd,
+    unidade: UNIDADES.includes(corpo.unidade) ? corpo.unidade : 'un',
+    categoria: CATEGORIAS.includes(corpo.categoria) ? corpo.categoria : 'Outros',
+    obs: texto(corpo.obs, 200),
+  } };
+}
+
+const itemParaCliente = (i) => ({
+  id: i.id, nome: i.nome, quantidade: i.quantidade, unidade: i.unidade, categoria: i.categoria, obs: i.obs || '',
+  comprado: !!i.comprado, criadoPor: i.criado_por, compradoPor: i.comprado_por, atualizadoEm: i.atualizado_em,
+});
+const lerItemDb = (id) => db.prepare('SELECT * FROM compras WHERE id = ?').get(id);
+
+function lembrar(item) {
+  db.prepare(`INSERT INTO compras_historico (nome, unidade, categoria) VALUES (?, ?, ?)
+    ON CONFLICT(nome) DO UPDATE SET unidade = excluded.unidade, categoria = excluded.categoria, usos = usos + 1, ultimo = datetime('now')`)
+    .run(item.nome, item.unidade, item.categoria);
+}
+
+app.get('/api/compras', exigirLogin, (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.json({
+    itens: db.prepare('SELECT * FROM compras ORDER BY comprado, categoria, nome COLLATE NOCASE').all().map(itemParaCliente),
+    sugestoes: db.prepare('SELECT nome, unidade, categoria FROM compras_historico ORDER BY usos DESC, ultimo DESC LIMIT 300').all(),
+    categorias: CATEGORIAS, unidades: UNIDADES,
+  });
+});
+
+app.post('/api/compras', exigirLogin, (req, res) => {
+  const { ok, erro } = lerItem(req.body);
+  if (erro) return res.status(400).json({ erro });
+  lembrar(ok);
+  // Se o item já está na lista (ainda não comprado, mesma unidade), soma a quantidade.
+  const igual = db.prepare('SELECT * FROM compras WHERE nome = ? COLLATE NOCASE AND unidade = ? AND comprado = 0').get(ok.nome, ok.unidade);
+  if (igual) {
+    db.prepare("UPDATE compras SET quantidade = MIN(quantidade + ?, 9999), atualizado_em = datetime('now') WHERE id = ?").run(ok.quantidade, igual.id);
+    return res.json({ ...itemParaCliente(lerItemDb(igual.id)), somado: true });
+  }
+  const r = db.prepare('INSERT INTO compras (nome, quantidade, unidade, categoria, obs, criado_por) VALUES (?, ?, ?, ?, ?, ?)')
+    .run(ok.nome, ok.quantidade, ok.unidade, ok.categoria, ok.obs, req.usuario.id);
+  res.status(201).json(itemParaCliente(lerItemDb(r.lastInsertRowid)));
+});
+
+app.put('/api/compras/:id', exigirLogin, (req, res) => {
+  const atual = lerItemDb(Number(req.params.id));
+  if (!atual) return res.status(404).json({ erro: 'Item não encontrado. Talvez já tenha saído da lista.' });
+  const { ok, erro } = lerItem(req.body);
+  if (erro) return res.status(400).json({ erro });
+  lembrar(ok);
+  db.prepare("UPDATE compras SET nome = ?, quantidade = ?, unidade = ?, categoria = ?, obs = ?, atualizado_em = datetime('now') WHERE id = ?")
+    .run(ok.nome, ok.quantidade, ok.unidade, ok.categoria, ok.obs, atual.id);
+  res.json(itemParaCliente(lerItemDb(atual.id)));
+});
+
+// Marca/desmarca "no carrinho".
+app.post('/api/compras/:id/comprado', exigirLogin, (req, res) => {
+  const atual = lerItemDb(Number(req.params.id));
+  if (!atual) return res.status(404).json({ erro: 'Item não encontrado. Talvez já tenha saído da lista.' });
+  const comprado = req.body?.comprado ? 1 : 0;
+  db.prepare("UPDATE compras SET comprado = ?, comprado_por = ?, atualizado_em = datetime('now') WHERE id = ?")
+    .run(comprado, comprado ? req.usuario.id : null, atual.id);
+  res.json(itemParaCliente(lerItemDb(atual.id)));
+});
+
+app.delete('/api/compras/:id', exigirLogin, (req, res) => {
+  const r = db.prepare('DELETE FROM compras WHERE id = ?').run(Number(req.params.id));
+  if (!r.changes) return res.status(404).json({ erro: 'Item não encontrado.' });
+  res.json({ ok: true });
+});
+
+// Tira da lista tudo o que já está no carrinho.
+app.post('/api/compras/limpar', exigirLogin, (req, res) => {
+  const r = db.prepare('DELETE FROM compras WHERE comprado = 1').run();
+  res.json({ removidos: Number(r.changes) });
+});
+
 app.use('/api', (req, res) => res.status(404).json({ erro: 'Rota não encontrada.' }));
 
 // O shell do app e o service worker nunca ficam presos em cache do navegador.
@@ -227,4 +321,4 @@ if (require.main === module) {
   app.listen(PORT, () => console.log(`Agenda da Família rodando em http://localhost:${PORT}`));
 }
 
-module.exports = { app, lerEvento };
+module.exports = { app, lerEvento, lerItem };

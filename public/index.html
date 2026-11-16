@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Agenda da Família</title>
-<meta name="description" content="Agenda compartilhada da família, com as cores da AR Consultoria.">
+<meta name="description" content="Agenda e lista de compras da família, com as cores da AR Consultoria.">
 <meta name="theme-color" content="#17397d">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
@@ -38,18 +38,23 @@
   <header class="faixa">
     <div class="faixa-in gutter">
       <div class="marca"><svg><use href="#logo"/></svg><div><b>Agenda da Família</b><small>AR Consultoria</small></div></div>
+      <nav class="abas" aria-label="Seções">
+        <button class="aba" data-aba="agenda" aria-current="page"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Agenda</button>
+        <button class="aba" data-aba="compras"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2.5l2.2 11.2a2 2 0 0 0 2 1.6h7.6a2 2 0 0 0 2-1.5L21 8H6.2"/><circle cx="10" cy="20.5" r="1.3"/><circle cx="17" cy="20.5" r="1.3"/></svg>Compras<span class="contador" id="contCompras" hidden></span></button>
+      </nav>
+      <div class="titulo-compras" id="tituloCompras" hidden><h1>Lista de compras</h1><button class="ic" data-ajustes aria-label="Ajustes"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></button></div>
       <div class="nav-mes">
         <button class="ic" id="ant" aria-label="Mês anterior"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></button>
         <h1 id="titMes">Mês</h1>
         <button class="ic" id="prox" aria-label="Próximo mês"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>
         <button class="btn-hoje" id="hoje">Hoje</button>
-        <button class="ic" id="btnAjustes" aria-label="Ajustes"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></button>
+        <button class="ic" id="btnAjustes" data-ajustes aria-label="Ajustes"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></button>
       </div>
       <button class="btn-novo" id="novo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Novo compromisso</button>
     </div>
   </header>
 
-  <main class="wrap gutter">
+  <main class="wrap gutter" id="vistaAgenda">
     <div class="aviso" id="avisoInstalar" hidden><span id="txtInstalar"></span><button class="btn-sec" id="btnInstalar" hidden>Instalar</button><button class="btn-sec" id="fecharInstalar">Agora não</button></div>
     <div class="aviso" id="aviso" hidden></div>
     <div class="barra" role="group" aria-label="Filtrar por pessoa">
@@ -79,6 +84,58 @@
       </aside>
     </div>
   </main>
+
+  <main class="wrap gutter" id="vistaCompras" hidden>
+    <div class="aviso" id="avisoCompras" hidden></div>
+    <div class="compras-grid">
+      <section class="painel add-item" aria-labelledby="tAdd">
+        <h2 id="tAdd">Adicionar à lista</h2>
+        <form id="formItem" autocomplete="off">
+          <label class="c">ITEM<input type="text" id="iNome" list="sugestoes" maxlength="80" placeholder="Ex.: Arroz, Leite, Detergente" required></label>
+          <div class="linha-item-form">
+            <div class="c">QUANTIDADE
+              <div class="qtd"><button type="button" data-passo="-1" aria-label="Menos">−</button><input type="text" id="iQtd" inputmode="decimal" value="1" aria-label="Quantidade"><button type="button" data-passo="1" aria-label="Mais">+</button></div>
+            </div>
+            <label class="c">UNIDADE<select id="iUni"></select></label>
+            <label class="c">SEÇÃO<select id="iCat"></select></label>
+          </div>
+          <p class="erro" id="iErro" role="alert"></p>
+          <button class="btn-pri" type="submit">Adicionar</button>
+        </form>
+        <datalist id="sugestoes"></datalist>
+      </section>
+      <section class="lista-compras" aria-live="polite">
+        <div class="resumo" id="resumoCompras"></div>
+        <div id="listaCompras"></div>
+        <div id="carrinho"></div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<!-- Item da lista de compras -->
+<div class="veu" id="veuItem" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="eTit">
+    <div class="modal-top"><h3 id="eTit">Editar item</h3><button class="fechar" data-fechar aria-label="Fechar">×</button></div>
+    <form id="formEditItem" autocomplete="off">
+      <label class="c">ITEM<input type="text" id="eNome" list="sugestoes" maxlength="80" required></label>
+      <div class="linha-item-form">
+        <div class="c">QUANTIDADE
+          <div class="qtd"><button type="button" data-passo="-1" aria-label="Menos">−</button><input type="text" id="eQtd" inputmode="decimal" aria-label="Quantidade"><button type="button" data-passo="1" aria-label="Mais">+</button></div>
+        </div>
+        <label class="c">UNIDADE<select id="eUni"></select></label>
+        <label class="c">SEÇÃO<select id="eCat"></select></label>
+      </div>
+      <label class="c">OBSERVAÇÃO<input type="text" id="eObs" maxlength="200" placeholder="Ex.: marca, tamanho, sem lactose"></label>
+      <p class="dica" id="eQuem"></p>
+      <p class="erro" id="eErro" role="alert"></p>
+      <div class="acoes">
+        <button type="button" class="btn-del" id="eExcluir">Tirar da lista</button>
+        <button type="button" class="btn-sec" data-fechar>Cancelar</button>
+        <button type="submit" class="btn-pri" id="eSalvar">Salvar</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <!-- Compromisso -->
@@ -151,5 +208,6 @@
 
 <div class="toast" id="toast" hidden></div>
 <script src="/js/app.js"></script>
+<script src="/js/compras.js"></script>
 </body>
 </html>
