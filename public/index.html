@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-tema="claro">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -14,6 +14,10 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Agenda">
 <link rel="stylesheet" href="/css/app.css">
+<script>
+  // Aplica o tema escolhido neste aparelho antes de desenhar a tela (padrão: claro).
+  try { var t = localStorage.getItem('agenda:tema'); if (t === 'escuro' || t === 'auto') document.documentElement.dataset.tema = t; } catch (e) {}
+</script>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -191,6 +195,15 @@
           </div>
           <div class="acoes"><button type="submit" class="btn-pri">Salvar nomes</button></div>
         </form>
+      </section>
+      <section>
+        <h4>Aparência neste aparelho</h4>
+        <div class="temas" role="radiogroup" aria-label="Aparência">
+          <label><input type="radio" name="tema" value="claro"><span>Claro</span></label>
+          <label><input type="radio" name="tema" value="escuro"><span>Escuro</span></label>
+          <label><input type="radio" name="tema" value="auto"><span>Automático</span></label>
+        </div>
+        <p class="dica" style="margin-top:8px">Automático segue o modo claro/escuro do celular.</p>
       </section>
       <section>
         <h4>Minha senha</h4>

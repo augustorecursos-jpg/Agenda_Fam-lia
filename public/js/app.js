@@ -87,7 +87,7 @@
   }
 
   function render() {
-    $('#titMes').textContent = maiuscula(fmtMes.format(st.mes));
+    $('#titMes').textContent = `${maiuscula(st.mes.toLocaleDateString('pt-BR', { month: 'long' }))} ${st.mes.getFullYear()}`;
     document.querySelectorAll('[data-nome="a"]').forEach((el) => { el.textContent = st.nomes.a; });
     document.querySelectorAll('[data-nome="b"]').forEach((el) => { el.textContent = st.nomes.b; });
     document.querySelectorAll('.filtro').forEach((b) => b.setAttribute('aria-pressed', b.dataset.f === st.filtro));
@@ -309,8 +309,21 @@
     $('#nA').value = st.nomes.a; $('#nB').value = st.nomes.b;
     $('#sAtual').value = ''; $('#sNova').value = ''; $('#sErro').textContent = '';
     $('#quemSou').textContent = st.eu ? `Você entrou como ${st.eu.nome} (usuário “${st.eu.login}”).` : '';
+    const tema = document.documentElement.dataset.tema || 'claro';
+    document.querySelectorAll('input[name=tema]').forEach((r) => { r.checked = r.value === tema; });
     $('#veuAjustes').hidden = false;
   };
+  // Aparência: claro (padrão), escuro ou automático (segue o celular). Fica salvo só neste aparelho.
+  function aplicarTema(tema) {
+    document.documentElement.dataset.tema = tema;
+    const escuro = tema === 'escuro' || (tema === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    document.querySelector('meta[name=theme-color]').content = escuro ? '#0f2152' : '#17397d';
+  }
+  document.querySelectorAll('input[name=tema]').forEach((r) => r.addEventListener('change', () => {
+    aplicarTema(r.value);
+    try { localStorage.setItem('agenda:tema', r.value); } catch {}
+  }));
+  aplicarTema(document.documentElement.dataset.tema || 'claro');
   document.querySelectorAll('[data-ajustes]').forEach((b) => b.addEventListener('click', abrirAjustes));
   $('#formNomes').addEventListener('submit', async (ev) => {
     ev.preventDefault();

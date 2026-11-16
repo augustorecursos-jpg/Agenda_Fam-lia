@@ -15,7 +15,15 @@
   --raio:16px; --raio-p:10px;
   color-scheme:light;
 }
-@media (prefers-color-scheme:dark){:root{
+/* Tema: claro por padrão; escuro escolhido em Ajustes, ou "automático" seguindo o celular. */
+:root[data-tema="escuro"]{
+  --fundo:#0b1530; --papel:#16224a; --texto:#e8f0f8; --suave:#9aa8b8; --borda:#24346a; --borda-forte:#33478a;
+  --hoje:#1d3168; --fora:#111c3e; --faixa:#0f2152; --faixa-suave:#8cc8e6;
+  --pa:#2f8ad6; --pa-txt:#ffffff; --pb:#20b8d5; --pb-txt:#0b1530; --pc:#b3d8eb; --pc-txt:#0b1530;
+  --sel:#20b8d5; --hoje-num:#20b8d5; --hoje-num-txt:#0b1530; --pri:#20b8d5; --pri-txt:#0b1530; --link:#b3d8eb;
+  --ativo:#b3d8eb; --ativo-txt:#0b1530;
+  --perigo:#ef6b6b; --perigo-bg:#3a1c2a; --sombra:0 18px 48px rgba(0,0,0,.5); color-scheme:dark}
+@media (prefers-color-scheme:dark){:root[data-tema="auto"]{
   --fundo:#0b1530; --papel:#16224a; --texto:#e8f0f8; --suave:#9aa8b8; --borda:#24346a; --borda-forte:#33478a;
   --hoje:#1d3168; --fora:#111c3e; --faixa:#0f2152; --faixa-suave:#8cc8e6;
   --pa:#2f8ad6; --pa-txt:#ffffff; --pb:#20b8d5; --pb-txt:#0b1530; --pc:#b3d8eb; --pc-txt:#0b1530;
@@ -51,7 +59,7 @@ button{cursor:pointer}
 .marca b{font-weight:800;font-size:15px;letter-spacing:.02em;display:block}
 .marca small{display:block;color:var(--faixa-suave);font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
 .nav-mes{display:flex;align-items:center;gap:6px;margin-left:auto}
-.nav-mes h1{font-size:20px;font-weight:700;margin:0 6px;min-width:170px;text-align:center}
+.nav-mes h1{font-size:20px;font-weight:700;margin:0 6px;min-width:170px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ic{background:transparent;border:1px solid rgba(179,216,235,.35);color:var(--faixa-txt);width:36px;height:36px;border-radius:10px;display:grid;place-items:center;flex:none}
 .ic:hover{background:rgba(179,216,235,.14)}
 .btn-hoje{background:transparent;border:1px solid rgba(179,216,235,.35);color:var(--faixa-txt);border-radius:10px;height:36px;padding:0 12px;font-weight:700}
@@ -156,6 +164,12 @@ input:disabled{opacity:.5}
 .btn-del.conf{background:var(--perigo-bg)}
 .btn-sair{color:var(--perigo);border-color:var(--perigo)}
 .dica{color:var(--suave);font-size:13px;margin:0}
+.temas{display:flex;gap:8px;flex-wrap:wrap}
+.temas label{flex:1;min-width:90px;position:relative}
+.temas input{position:absolute;opacity:0;pointer-events:none}
+.temas span{display:flex;align-items:center;justify-content:center;gap:7px;border:1px solid var(--borda-forte);border-radius:10px;padding:10px 8px;font-weight:700;cursor:pointer}
+.temas input:checked + span{border-color:var(--sel);box-shadow:inset 0 0 0 1px var(--sel);background:var(--hoje)}
+.temas input:focus-visible + span{outline:3px solid var(--ciano)}
 
 .toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--marinho);color:#fff;padding:10px 16px;border-radius:10px;font-weight:700;z-index:60;box-shadow:var(--sombra);max-width:calc(100% - 32px);text-align:center}
 
@@ -209,7 +223,7 @@ input:disabled{opacity:.5}
 @media (max-width:640px){
   .faixa-in{gap:8px}
   .nav-mes{margin-left:0;width:100%;justify-content:space-between}
-  .nav-mes h1{min-width:0;font-size:17px;flex:1}
+  .nav-mes h1{min-width:0;font-size:17px;flex:1;margin:0 2px}
   .abas{position:fixed;left:0;right:0;bottom:0;z-index:30;border-radius:0;background:var(--faixa);padding:6px max(10px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(10px,env(safe-area-inset-left,0px));box-shadow:0 -6px 20px rgba(11,21,48,.18)}
   .aba{flex:1;flex-direction:column;gap:2px;font-size:11.5px;padding:6px 4px}
   .aba[aria-current="page"]{background:rgba(179,216,235,.16);color:#fff}
@@ -231,5 +245,9 @@ input:disabled{opacity:.5}
   .barras{display:flex}
   .semana div{padding:8px 0;text-align:center;letter-spacing:.04em}
   .barra .rot{display:none}
+  .barra{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-inline:calc(-1 * max(16px,env(safe-area-inset-left,0px)));padding-inline:max(16px,env(safe-area-inset-left,0px));padding-block:2px}
+  .barra::-webkit-scrollbar{display:none}
+  .filtro{flex:none;white-space:nowrap}
 }
+@media (max-width:400px){.ic{width:34px;height:34px}.btn-hoje{padding:0 10px;height:34px}.nav-mes{gap:4px}.nav-mes h1{font-size:16px}}
 @media (prefers-reduced-motion:no-preference){.modal{animation:sobe .18s ease-out}@keyframes sobe{from{transform:translateY(10px);opacity:.4}}}

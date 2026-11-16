@@ -24,7 +24,8 @@ Mesma base do sistema da AR: Node.js + SQLite nativo (`node:sqlite`), HTML/CSS/J
   Segurar o ícone do app no Android abre direto a lista (atalho).
 - **Filtro** por pessoa (os compromissos "juntos" aparecem nos dois).
 - **Duas contas** (uma para cada um). O que um marca, o outro vê: o app atualiza ao voltar para ele e a cada minuto.
-- **Ajustes** (ícone de pessoa): nomes que aparecem na agenda, trocar a própria senha e sair.
+- **Ajustes** (ícone de pessoa): nomes que aparecem na agenda, aparência (claro, escuro ou automático, que segue
+  o modo do celular; o padrão é claro), trocar a própria senha e sair.
 - **Sem internet**: o app abre e mostra a última versão salva no aparelho (para salvar, precisa de conexão).
 - O login fica guardado no celular por 180 dias.
 
