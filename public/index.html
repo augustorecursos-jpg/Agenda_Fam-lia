@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Agenda da Família</title>
+<meta name="description" content="Agenda compartilhada da família, com as cores da AR Consultoria.">
+<meta name="theme-color" content="#17397d">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Agenda">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="logo" viewBox="0 0 32 32"><defs><linearGradient id="g" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#17397d"/><stop offset="1" stop-color="#005ea4"/></linearGradient></defs><rect width="32" height="32" rx="8" fill="url(#g)" stroke="#20b8d5" stroke-opacity=".5"/><path d="M7 25 14.5 8h2.5l7 17" fill="none" stroke="#fff" stroke-width="3" stroke-linejoin="round"/><path d="M9.5 19.5c5-1 9-4 13-10" fill="none" stroke="#20b8d5" stroke-width="2.6" stroke-linecap="round"/><path d="m18.5 8.5 5 .5-.6 5" fill="none" stroke="#20b8d5" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
+<!-- Login -->
+<section class="entrar gutter" id="telaLogin" hidden>
+  <form class="cartao-login" id="formLogin">
+    <div class="marca"><svg><use href="#logo"/></svg><div><b>Agenda da Família</b><small>AR Consultoria</small></div></div>
+    <h1>Entrar</h1>
+    <p>Use o seu usuário. Vocês dois veem e editam a mesma agenda.</p>
+    <label class="c">USUÁRIO<input type="text" id="lLogin" autocomplete="username" autocapitalize="none" required></label>
+    <label class="c">SENHA<input type="password" id="lSenha" autocomplete="current-password" required></label>
+    <p class="erro" id="lErro" role="alert"></p>
+    <button class="btn-pri" type="submit">Entrar</button>
+  </form>
+</section>
+
+<!-- App -->
+<div id="telaApp" hidden>
+  <header class="faixa">
+    <div class="faixa-in gutter">
+      <div class="marca"><svg><use href="#logo"/></svg><div><b>Agenda da Família</b><small>AR Consultoria</small></div></div>
+      <div class="nav-mes">
+        <button class="ic" id="ant" aria-label="Mês anterior"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+        <h1 id="titMes">Mês</h1>
+        <button class="ic" id="prox" aria-label="Próximo mês"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>
+        <button class="btn-hoje" id="hoje">Hoje</button>
+        <button class="ic" id="btnAjustes" aria-label="Ajustes"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></button>
+      </div>
+      <button class="btn-novo" id="novo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Novo compromisso</button>
+    </div>
+  </header>
+
+  <main class="wrap gutter">
+    <div class="aviso" id="avisoInstalar" hidden><span id="txtInstalar"></span><button class="btn-sec" id="btnInstalar" hidden>Instalar</button><button class="btn-sec" id="fecharInstalar">Agora não</button></div>
+    <div class="aviso" id="aviso" hidden></div>
+    <div class="barra" role="group" aria-label="Filtrar por pessoa">
+      <span class="rot">Mostrar</span>
+      <button class="filtro" data-f="todos" aria-pressed="true">Todos</button>
+      <button class="filtro" data-f="a" aria-pressed="false"><span class="bola a"></span><span data-nome="a">Marido</span></button>
+      <button class="filtro" data-f="b" aria-pressed="false"><span class="bola b"></span><span data-nome="b">Esposa</span></button>
+      <button class="filtro" data-f="ambos" aria-pressed="false"><span class="bola ambos"></span>Juntos</button>
+    </div>
+
+    <div class="grade-wrap">
+      <section class="cal" aria-label="Calendário do mês">
+        <div class="semana"><div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div></div>
+        <div class="dias" id="dias"></div>
+      </section>
+      <aside class="lado">
+        <section class="painel" aria-live="polite">
+          <h2 id="titDia">Hoje</h2>
+          <div class="sub" id="subDia"></div>
+          <div class="lista" id="listaDia"></div>
+          <button class="btn-sec add-dia" id="addDia">+ Adicionar neste dia</button>
+        </section>
+        <section class="painel">
+          <p class="eyebrow">Próximos 14 dias</p>
+          <div class="lista" id="listaProx"></div>
+        </section>
+      </aside>
+    </div>
+  </main>
+</div>
+
+<!-- Compromisso -->
+<div class="veu" id="veu" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTit">
+    <div class="modal-top"><h3 id="mTit">Novo compromisso</h3><button class="fechar" data-fechar aria-label="Fechar">×</button></div>
+    <form id="form" autocomplete="off">
+      <label class="c">O QUE É<input type="text" id="fTitulo" required maxlength="120" placeholder="Ex.: Consulta no dentista"></label>
+      <div class="linha">
+        <label class="c dt">DATA<input type="date" id="fData" required></label>
+        <label class="c">INÍCIO<input type="time" id="fInicio"></label>
+        <label class="c">FIM<input type="time" id="fFim"></label>
+      </div>
+      <label class="check"><input type="checkbox" id="fDiaTodo"> Dia inteiro</label>
+      <div class="c">DE QUEM É
+        <div class="quem">
+          <label><input type="radio" name="quem" value="a"><span class="op"><span class="bola a"></span><span data-nome="a">Marido</span></span></label>
+          <label><input type="radio" name="quem" value="b"><span class="op"><span class="bola b"></span><span data-nome="b">Esposa</span></span></label>
+          <label><input type="radio" name="quem" value="ambos" checked><span class="op"><span class="bola ambos"></span>Juntos</span></label>
+        </div>
+      </div>
+      <div class="linha2">
+        <label class="c">ONDE<input type="text" id="fLocal" maxlength="120" placeholder="Opcional"></label>
+        <label class="c">REPETIR<select id="fRepetir"><option value="nao">Não repete</option><option value="semanal">Toda semana</option><option value="mensal">Todo mês</option><option value="anual">Todo ano</option></select></label>
+      </div>
+      <label class="c">OBSERVAÇÕES<textarea id="fNotas" maxlength="1000" placeholder="Opcional"></textarea></label>
+      <p class="erro" id="fErro" role="alert"></p>
+      <div class="acoes">
+        <button type="button" class="btn-del" id="excluir" hidden>Excluir</button>
+        <button type="button" class="btn-sec" data-fechar>Cancelar</button>
+        <button type="submit" class="btn-pri" id="salvar">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Ajustes -->
+<div class="veu" id="veuAjustes" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="aTit">
+    <div class="modal-top"><h3 id="aTit">Ajustes</h3><button class="fechar" data-fechar aria-label="Fechar">×</button></div>
+    <div class="corpo">
+      <p class="dica" id="quemSou"></p>
+      <section>
+        <h4>Nomes na agenda</h4>
+        <form id="formNomes">
+          <div class="linha2">
+            <label class="c"><span><span class="bola a"></span> PRIMEIRA PESSOA</span><input type="text" id="nA" maxlength="30" required></label>
+            <label class="c"><span><span class="bola b"></span> SEGUNDA PESSOA</span><input type="text" id="nB" maxlength="30" required></label>
+          </div>
+          <div class="acoes"><button type="submit" class="btn-pri">Salvar nomes</button></div>
+        </form>
+      </section>
+      <section>
+        <h4>Minha senha</h4>
+        <form id="formSenha">
+          <label class="c">SENHA ATUAL<input type="password" id="sAtual" autocomplete="current-password" required></label>
+          <label class="c">NOVA SENHA (MÍNIMO 6 CARACTERES)<input type="password" id="sNova" autocomplete="new-password" minlength="6" required></label>
+          <p class="erro" id="sErro" role="alert"></p>
+          <div class="acoes"><button type="submit" class="btn-pri">Trocar senha</button></div>
+        </form>
+      </section>
+      <div class="acoes"><button class="btn-sec btn-sair" id="sair">Sair deste aparelho</button></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+<script src="/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+# Blueprint do Render (render.com → New → Blueprint → este repositório).
+# Plano Starter + disco persistente: os compromissos sobrevivem a reinícios e novos deploys.
+services:
+  - type: web
+    name: agenda-familia
+    runtime: node
+    plan: starter
+    region: virginia
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /healthz
+    disk:
+      name: dados
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "22"
+      - key: DATA_DIR
+        value: /var/data
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: LOGIN_1
+        sync: false
+      - key: NOME_1
+        sync: false
+      - key: SENHA_1
+        sync: false
+      - key: LOGIN_2
+        sync: false
+      - key: NOME_2
+        sync: false
+      - key: SENHA_2
+        sync: false
