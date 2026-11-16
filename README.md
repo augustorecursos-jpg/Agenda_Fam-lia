@@ -14,6 +14,9 @@ Mesma base do sistema da AR: Node.js + SQLite nativo (`node:sqlite`), HTML/CSS/J
 - **Painel do dia** e **próximos 14 dias**.
 - **Compromissos**: o que é, data, início e fim (ou dia inteiro), de quem é, onde, observações e
   repetição (toda semana, todo mês, todo ano).
+- **Vários dias** (praia, férias, viagem): preencha "Até" com o último dia. No calendário vira uma faixa contínua
+  de um dia ao outro (no celular, uma barra abaixo dos números); no painel aparece "dia 2 de 3" e o período (20/11 a 22/11).
+  O horário de início vale para o primeiro dia e o de fim para o último.
 - **Filtro** por pessoa (os compromissos "juntos" aparecem nos dois).
 - **Duas contas** (uma para cada um). O que um marca, o outro vê: o app atualiza ao voltar para ele e a cada minuto.
 - **Ajustes** (ícone de pessoa): nomes que aparecem na agenda, trocar a própria senha e sair.

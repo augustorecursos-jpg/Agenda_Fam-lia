@@ -41,6 +41,11 @@ CREATE TABLE IF NOT EXISTS eventos (
 CREATE INDEX IF NOT EXISTS eventos_data ON eventos (data);
 `);
 
+// Compromissos de vários dias (ex.: praia de 20/11 a 22/11): último dia, AAAA-MM-DD. Vazio = um dia só.
+if (!db.prepare('PRAGMA table_info(eventos)').all().some((c) => c.name === 'data_fim')) {
+  db.exec('ALTER TABLE eventos ADD COLUMN data_fim TEXT');
+}
+
 function hashSenha(senha) {
   const sal = crypto.randomBytes(16);
   const h = crypto.scryptSync(String(senha), sal, 64);

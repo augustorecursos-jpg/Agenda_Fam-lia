@@ -42,24 +42,50 @@
     return dados;
   }
 
-  // ---------- ocorrências (inclui repetições) ----------
-  function ocorreEm(ev, dia) {
-    if (!ev.data) return false;
+  // ---------- ocorrências (inclui repetições e compromissos de vários dias) ----------
+  const DIA = 864e5;
+  const difDias = (x, y) => Math.round((parse(ymd(x)) - parse(ymd(y))) / DIA);
+  const duracao = (ev) => (ev.dataFim && ev.dataFim > ev.data ? difDias(parse(ev.dataFim), parse(ev.data)) + 1 : 1);
+  const fmtDM = (d) => `${pad(d.getDate())}/${pad(d.getMonth() + 1)}`;
+  function comecaEm(ev, dia) {
     const base = parse(ev.data);
     if (dia < base) return false;
     switch (ev.repetir) {
-      case 'semanal': return Math.round((dia - base) / 864e5) % 7 === 0;
+      case 'semanal': return difDias(dia, base) % 7 === 0;
       case 'mensal': return dia.getDate() === base.getDate();
       case 'anual': return dia.getDate() === base.getDate() && dia.getMonth() === base.getMonth();
-      default: return ymd(base) === ymd(dia);
+      default: return difDias(dia, base) === 0;
     }
   }
+  /** Se o compromisso acontece no dia: { e, ini (primeiro dia desta vez), pos (0 = primeiro dia), dur (total de dias) }. */
+  function ocorrencia(ev, dia) {
+    if (!ev.data) return null;
+    const dur = duracao(ev);
+    for (let pos = 0; pos < dur; pos++) {
+      const ini = addDias(dia, -pos);
+      if (comecaEm(ev, ini)) return { e: ev, ini, pos, dur };
+    }
+    return null;
+  }
   const passaFiltro = (ev) => st.filtro === 'todos' || ev.quem === st.filtro || (st.filtro !== 'ambos' && ev.quem === 'ambos');
-  const chaveHora = (e) => (e.diaTodo ? '' : e.inicio || '99');
-  const ordena = (x, y) => chaveHora(x).localeCompare(chaveHora(y)) || String(x.titulo).localeCompare(String(y.titulo));
-  const doDia = (dia) => st.eventos.filter((e) => passaFiltro(e) && ocorreEm(e, dia)).sort(ordena);
+  const chaveHora = (o) => (o.e.diaTodo || o.pos > 0 ? '' : o.e.inicio || '99');
+  // Vários dias primeiro (as faixas ficam alinhadas de um dia para o outro), depois por horário.
+  const ordena = (x, y) => (y.dur > 1) - (x.dur > 1)
+    || (x.dur > 1 && y.dur > 1 ? x.ini - y.ini || y.dur - x.dur || x.e.id - y.e.id : 0)
+    || chaveHora(x).localeCompare(chaveHora(y)) || String(x.e.titulo).localeCompare(String(y.e.titulo));
+  const doDia = (dia) => st.eventos.filter(passaFiltro).map((e) => ocorrencia(e, dia)).filter(Boolean).sort(ordena);
 
   // ---------- render ----------
+  function chipHtml(o, d) {
+    const { e, pos, dur } = o;
+    if (dur === 1) return `<span class="chip ${esc(e.quem)}">${!e.diaTodo && e.inicio ? `<span class="h">${esc(e.inicio)}</span>` : ''}${esc(e.titulo)}</span>`;
+    // Faixa contínua: o título aparece no primeiro dia e no começo de cada semana.
+    const comeca = pos === 0, termina = pos === dur - 1;
+    const cls = ['chip', 'multi', e.quem, (comeca || d.getDay() === 0) && 'ini', comeca && 'aberta', (termina || d.getDay() === 6) && 'fimm', termina && 'fechada'].filter(Boolean).join(' ');
+    const mostra = comeca || d.getDay() === 0;
+    return `<span class="${esc(cls)}">${mostra ? esc(e.titulo) : '&nbsp;'}</span>`;
+  }
+
   function render() {
     $('#titMes').textContent = maiuscula(fmtMes.format(st.mes));
     document.querySelectorAll('[data-nome="a"]').forEach((el) => { el.textContent = st.nomes.a; });
@@ -73,11 +99,14 @@
       const d = addDias(ini, i), k = ymd(d);
       const evs = doDia(d);
       const cls = ['dia', d.getMonth() !== st.mes.getMonth() && 'fora', k === hj && 'hoje', k === st.sel && 'sel'].filter(Boolean).join(' ');
-      const chips = evs.slice(0, 3).map((e) => `<span class="chip ${esc(e.quem)}">${!e.diaTodo && e.inicio ? `<span class="h">${esc(e.inicio)}</span>` : ''}${esc(e.titulo)}</span>`).join('');
+      const chips = evs.slice(0, 3).map((o) => chipHtml(o, d)).join('');
       const mais = evs.length > 3 ? `<span class="mais">+${evs.length - 3} mais</span>` : '';
-      const pontos = evs.length ? `<span class="pontos">${evs.slice(0, 4).map((e) => `<span class="bola ${esc(e.quem)}"></span>`).join('')}</span>` : '';
+      const multi = evs.filter((o) => o.dur > 1);
+      const barras = multi.length ? `<span class="barras">${multi.slice(0, 2).map((o) => `<span class="barra-m ${esc(o.e.quem)}${o.pos === 0 ? ' aberta' : ''}${o.pos === o.dur - 1 ? ' fechada' : ''}"></span>`).join('')}</span>` : '';
+      const simples = evs.filter((o) => o.dur === 1);
+      const pontos = simples.length ? `<span class="pontos">${simples.slice(0, 4).map((o) => `<span class="bola ${esc(o.e.quem)}"></span>`).join('')}</span>` : '';
       const rot = `${fmtDia.format(d)}${evs.length ? `, ${evs.length} compromisso${evs.length > 1 ? 's' : ''}` : ''}`;
-      html += `<button class="${cls}" data-d="${k}" aria-label="${esc(rot)}"><span class="num">${d.getDate()}</span>${chips}${mais}${pontos}</button>`;
+      html += `<button class="${cls}" data-d="${k}" aria-label="${esc(rot)}"><span class="num">${d.getDate()}</span>${chips}${mais}${barras}${pontos}</button>`;
     }
     $('#dias').innerHTML = html;
 
@@ -86,30 +115,41 @@
     $('#subDia').textContent = maiuscula(fmtDia.format(sd));
     const evs = doDia(sd);
     $('#listaDia').innerHTML = !st.carregado ? '<div class="vazio">Carregando os compromissos…</div>'
-      : evs.length ? evs.map((e) => itemHtml(e)).join('')
+      : evs.length ? evs.map((o) => itemHtml(o)).join('')
       : '<div class="vazio">Nada marcado para este dia.</div>';
 
-    const prox = [];
+    // Próximos: um compromisso de vários dias aparece uma vez só (no dia em que começa, ou hoje se já começou).
+    const prox = [], vistos = new Set();
     for (let i = 0; i < 14; i++) {
       const d = addDias(new Date(), i);
-      const l = doDia(d);
-      if (l.length) prox.push(`<div class="prox-data">${i === 0 ? 'Hoje' : i === 1 ? 'Amanhã' : esc(maiuscula(fmtCurto.format(d)))}</div>${l.map((e) => itemHtml(e)).join('')}`);
+      const l = doDia(d).filter((o) => { const k = `${o.e.id}|${ymd(o.ini)}`; if (vistos.has(k)) return false; vistos.add(k); return true; });
+      if (l.length) prox.push(`<div class="prox-data">${i === 0 ? 'Hoje' : i === 1 ? 'Amanhã' : esc(maiuscula(fmtCurto.format(d)))}</div>${l.map((o) => itemHtml(o)).join('')}`);
     }
     $('#listaProx').innerHTML = !st.carregado ? '<div class="vazio">Carregando…</div>'
       : prox.length ? prox.join('')
       : '<div class="vazio">Nenhum compromisso nas próximas duas semanas.<br><button class="btn-sec" data-acao="novo">Marcar o primeiro</button></div>';
   }
 
-  function itemHtml(e) {
-    const hora = e.diaTodo || !e.inicio ? 'Dia todo' : esc(e.inicio);
-    const fim = !e.diaTodo && e.fim ? `<small>até ${esc(e.fim)}</small>` : '';
+  function itemHtml(o) {
+    const { e, pos, dur, ini } = o;
+    let hora, sub = '';
+    if (dur > 1) {
+      hora = `${dur} dias`;
+      sub = pos === 0 ? (!e.diaTodo && e.inicio ? `começa ${esc(e.inicio)}` : 'começa hoje')
+        : pos === dur - 1 ? (!e.diaTodo && e.fim ? `termina ${esc(e.fim)}` : 'último dia') : `dia ${pos + 1} de ${dur}`;
+    } else {
+      hora = e.diaTodo || !e.inicio ? 'Dia todo' : esc(e.inicio);
+      sub = !e.diaTodo && e.fim ? `até ${esc(e.fim)}` : '';
+    }
+    const periodo = dur > 1 ? `<span>${fmtDM(ini)} a ${fmtDM(addDias(ini, dur - 1))}</span>` : '';
     const meta = [
       `<span class="tag"><span class="bola ${esc(e.quem)}"></span>${esc(nomeDe(e.quem))}</span>`,
+      periodo,
       e.local ? `<span>${esc(e.local)}</span>` : '',
       REP[e.repetir] ? `<span>Repete ${REP[e.repetir]}</span>` : '',
     ].join('');
     const notas = e.notas ? `<div class="meta">${esc(e.notas.length > 140 ? `${e.notas.slice(0, 140)}…` : e.notas)}</div>` : '';
-    return `<button class="item" data-id="${esc(e.id)}"><div class="hora">${hora}${fim}</div><div><div class="tit">${esc(e.titulo)}</div><div class="meta">${meta}</div>${notas}</div></button>`;
+    return `<button class="item${dur > 1 ? ` multi ${esc(e.quem)}` : ''}" data-id="${esc(e.id)}"><div class="hora">${hora}${sub ? `<small>${sub}</small>` : ''}</div><div><div class="tit">${esc(e.titulo)}</div><div class="meta">${meta}</div>${notas}</div></button>`;
   }
 
   // ---------- avisos ----------
@@ -172,6 +212,7 @@
     $('#mTit').textContent = ev ? 'Editar compromisso' : 'Novo compromisso';
     $('#fTitulo').value = ev?.titulo || '';
     $('#fData').value = ev?.data || dataPadrao || st.sel;
+    $('#fDataFim').value = ev?.dataFim || '';
     $('#fInicio').value = ev?.inicio || '';
     $('#fFim').value = ev?.fim || '';
     $('#fDiaTodo').checked = !!ev?.diaTodo;
@@ -182,10 +223,23 @@
     const q = ev?.quem || 'ambos';
     document.querySelector(`input[name=quem][value="${q}"]`).checked = true;
     const del = $('#excluir'); del.hidden = !ev; del.classList.remove('conf'); del.textContent = 'Excluir';
-    horasAtivas();
+    horasAtivas(); periodo();
     $('#veu').hidden = false;
     if (!ev && window.matchMedia('(min-width:641px)').matches) setTimeout(() => $('#fTitulo').focus(), 30);
   }
+  // Vários dias: mostra quantos dias são e não deixa o fim antes do começo.
+  function periodo() {
+    const de = $('#fData').value, ate = $('#fDataFim').value;
+    $('#fDataFim').min = de || '';
+    const n = de && ate && ate > de ? difDias(parse(ate), parse(de)) + 1 : 1;
+    $('#fDur').textContent = n > 1 ? `${n} dias: de ${fmtDM(parse(de))} a ${fmtDM(parse(ate))}. O horário de início vale para o primeiro dia e o de fim para o último.` : '';
+    $('#fDur').hidden = n === 1;
+  }
+  $('#fData').addEventListener('change', () => {
+    if ($('#fDataFim').value && $('#fDataFim').value < $('#fData').value) $('#fDataFim').value = $('#fData').value;
+    periodo();
+  });
+  $('#fDataFim').addEventListener('change', periodo);
   function horasAtivas() { const d = $('#fDiaTodo').checked; $('#fInicio').disabled = d; $('#fFim').disabled = d; }
   $('#fDiaTodo').addEventListener('change', horasAtivas);
 
@@ -193,7 +247,7 @@
     ev.preventDefault();
     const diaTodo = $('#fDiaTodo').checked;
     const dados = {
-      titulo: $('#fTitulo').value.trim(), data: $('#fData').value, diaTodo,
+      titulo: $('#fTitulo').value.trim(), data: $('#fData').value, dataFim: $('#fDataFim').value, diaTodo,
       inicio: diaTodo ? '' : $('#fInicio').value, fim: diaTodo ? '' : $('#fFim').value,
       quem: document.querySelector('input[name=quem]:checked').value,
       local: $('#fLocal').value.trim(), repetir: $('#fRepetir').value, notas: $('#fNotas').value.trim(),

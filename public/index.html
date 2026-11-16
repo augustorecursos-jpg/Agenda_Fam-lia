@@ -86,9 +86,13 @@
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTit">
     <div class="modal-top"><h3 id="mTit">Novo compromisso</h3><button class="fechar" data-fechar aria-label="Fechar">×</button></div>
     <form id="form" autocomplete="off">
-      <label class="c">O QUE É<input type="text" id="fTitulo" required maxlength="120" placeholder="Ex.: Consulta no dentista"></label>
-      <div class="linha">
-        <label class="c dt">DATA<input type="date" id="fData" required></label>
+      <label class="c">O QUE É<input type="text" id="fTitulo" required maxlength="120" placeholder="Ex.: Dentista, Praia, Férias"></label>
+      <div class="linha2">
+        <label class="c">DATA<input type="date" id="fData" required></label>
+        <label class="c">ATÉ (VÁRIOS DIAS)<input type="date" id="fDataFim" aria-describedby="fDur"></label>
+      </div>
+      <p class="dica" id="fDur" hidden></p>
+      <div class="linha2">
         <label class="c">INÍCIO<input type="time" id="fInicio"></label>
         <label class="c">FIM<input type="time" id="fFim"></label>
       </div>

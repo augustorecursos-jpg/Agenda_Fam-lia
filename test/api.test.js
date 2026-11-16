@@ -40,6 +40,15 @@ test('validação dos compromissos', () => {
   assert.deepStrictEqual([ok.titulo, ok.dia_todo, ok.inicio, ok.quem, ok.repetir], ['Jantar', 1, null, 'ambos', 'nao']);
 });
 
+test('compromissos de vários dias', () => {
+  const { ok } = lerEvento({ titulo: 'Praia', data: '2026-11-20', dataFim: '2026-11-22', inicio: '18:00', fim: '09:00' });
+  assert.strictEqual(ok.data_fim, '2026-11-22');
+  assert.strictEqual(ok.inicio, '18:00'); // em vários dias o fim pode ser "antes" do início: é em outro dia
+  assert.strictEqual(lerEvento({ titulo: 'X', data: '2026-11-20', dataFim: '2026-11-20' }).ok.data_fim, null);
+  assert.ok(lerEvento({ titulo: 'X', data: '2026-11-20', dataFim: '2026-11-19' }).erro);
+  assert.ok(lerEvento({ titulo: 'X', data: '2026-11-20', dataFim: '2028-01-01' }).erro);
+});
+
 test('rotas exigem login', async () => {
   const anon = cliente();
   assert.strictEqual((await anon('GET', '/api/eventos')).status, 401);
@@ -70,6 +79,15 @@ test('o que um marca o outro vê, edita e exclui', async () => {
   assert.strictEqual((await ela('DELETE', `/api/eventos/${id}`)).status, 200);
   assert.strictEqual((await ele('DELETE', `/api/eventos/${id}`)).status, 404);
   assert.strictEqual((await ele('GET', '/api/eventos')).dados.length, 0);
+});
+
+test('férias de vários dias são salvas e editadas', async () => {
+  const r = await ela('POST', '/api/eventos', { titulo: 'Férias', data: '2026-12-20', dataFim: '2027-01-03', diaTodo: true, quem: 'ambos' });
+  assert.strictEqual(r.status, 201);
+  assert.strictEqual(r.dados.dataFim, '2027-01-03');
+  const ed = await ele('PUT', `/api/eventos/${r.dados.id}`, { ...r.dados, dataFim: '' });
+  assert.strictEqual(ed.dados.dataFim, '');
+  await ele('DELETE', `/api/eventos/${r.dados.id}`);
 });
 
 test('nomes do casal', async () => {

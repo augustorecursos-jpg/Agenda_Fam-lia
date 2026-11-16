@@ -96,17 +96,22 @@ function lerEvento(corpo = {}) {
   const data = dataValida(corpo.data);
   if (!titulo) return { erro: 'Informe o que é o compromisso.' };
   if (!data) return { erro: 'Informe uma data válida.' };
+  let dataFim = corpo.dataFim ? dataValida(corpo.dataFim) : null;
+  if (corpo.dataFim && !dataFim) return { erro: 'Informe uma data final válida.' };
+  if (dataFim && dataFim < data) return { erro: 'A data final é antes da data inicial.' };
+  if (dataFim === data) dataFim = null;
+  if (dataFim && (Date.parse(dataFim) - Date.parse(data)) / 864e5 > 366) return { erro: 'Um compromisso pode durar no máximo um ano.' };
   const diaTodo = corpo.diaTodo ? 1 : 0;
   const inicio = diaTodo ? null : horaValida(corpo.inicio);
   const fim = diaTodo ? null : horaValida(corpo.fim);
-  if (inicio && fim && fim < inicio) return { erro: 'O horário de fim é antes do início.' };
+  if (!dataFim && inicio && fim && fim < inicio) return { erro: 'O horário de fim é antes do início.' };
   const quem = ['a', 'b', 'ambos'].includes(corpo.quem) ? corpo.quem : 'ambos';
   const repetir = ['nao', 'semanal', 'mensal', 'anual'].includes(corpo.repetir) ? corpo.repetir : 'nao';
-  return { ok: { titulo, data, dia_todo: diaTodo, inicio, fim, quem, local: texto(corpo.local, 120), notas: textoLongo(corpo.notas), repetir } };
+  return { ok: { titulo, data, data_fim: dataFim, dia_todo: diaTodo, inicio, fim, quem, local: texto(corpo.local, 120), notas: textoLongo(corpo.notas), repetir } };
 }
 
 const paraCliente = (e) => ({
-  id: e.id, titulo: e.titulo, data: e.data, diaTodo: !!e.dia_todo, inicio: e.inicio || '', fim: e.fim || '',
+  id: e.id, titulo: e.titulo, data: e.data, dataFim: e.data_fim || '', diaTodo: !!e.dia_todo, inicio: e.inicio || '', fim: e.fim || '',
   quem: e.quem, local: e.local || '', notas: e.notas || '', repetir: e.repetir,
   criadoPor: e.criado_por, atualizadoEm: e.atualizado_em,
 });
@@ -185,8 +190,8 @@ app.get('/api/eventos', exigirLogin, (req, res) => {
 app.post('/api/eventos', exigirLogin, (req, res) => {
   const { ok, erro } = lerEvento(req.body);
   if (erro) return res.status(400).json({ erro });
-  const r = db.prepare(`INSERT INTO eventos (titulo, data, dia_todo, inicio, fim, quem, local, notas, repetir, criado_por)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(ok.titulo, ok.data, ok.dia_todo, ok.inicio, ok.fim, ok.quem, ok.local, ok.notas, ok.repetir, req.usuario.id);
+  const r = db.prepare(`INSERT INTO eventos (titulo, data, data_fim, dia_todo, inicio, fim, quem, local, notas, repetir, criado_por)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(ok.titulo, ok.data, ok.data_fim, ok.dia_todo, ok.inicio, ok.fim, ok.quem, ok.local, ok.notas, ok.repetir, req.usuario.id);
   res.status(201).json(paraCliente(db.prepare('SELECT * FROM eventos WHERE id = ?').get(r.lastInsertRowid)));
 });
 
@@ -195,8 +200,8 @@ app.put('/api/eventos/:id', exigirLogin, (req, res) => {
   if (!atual) return res.status(404).json({ erro: 'Compromisso não encontrado. Talvez já tenha sido excluído.' });
   const { ok, erro } = lerEvento(req.body);
   if (erro) return res.status(400).json({ erro });
-  db.prepare(`UPDATE eventos SET titulo = ?, data = ?, dia_todo = ?, inicio = ?, fim = ?, quem = ?, local = ?, notas = ?, repetir = ?,
-    atualizado_em = datetime('now') WHERE id = ?`).run(ok.titulo, ok.data, ok.dia_todo, ok.inicio, ok.fim, ok.quem, ok.local, ok.notas, ok.repetir, atual.id);
+  db.prepare(`UPDATE eventos SET titulo = ?, data = ?, data_fim = ?, dia_todo = ?, inicio = ?, fim = ?, quem = ?, local = ?, notas = ?, repetir = ?,
+    atualizado_em = datetime('now') WHERE id = ?`).run(ok.titulo, ok.data, ok.data_fim, ok.dia_todo, ok.inicio, ok.fim, ok.quem, ok.local, ok.notas, ok.repetir, atual.id);
   res.json(paraCliente(db.prepare('SELECT * FROM eventos WHERE id = ?').get(atual.id)));
 });
 
