@@ -1,7 +1,9 @@
 # Agenda da Família
 
 Agenda e lista de compras compartilhadas do casal, com a identidade visual da AR Consultoria (marinho `#17397d`, azul `#005ea4`,
-ciano `#20b8d5`, azul-claro `#b3d8eb`, fonte Montserrat). É um aplicativo web **instalável no celular** (PWA):
+ciano `#20b8d5`, azul-claro `#b3d8eb`, fonte Montserrat), com **logo próprio**: uma casa com a folha de
+calendário e um coração metade azul, metade ciano (o mesmo símbolo de "Juntos" no app). O desenho fica em
+`public/icons/favicon.svg`, e os PNGs da tela inicial em `public/icons/`. É um aplicativo web **instalável no celular** (PWA):
 abre em tela cheia pelo ícone, como o Vértice.
 
 Mesma base do sistema da AR: Node.js + SQLite nativo (`node:sqlite`), HTML/CSS/JS puro, sem build.

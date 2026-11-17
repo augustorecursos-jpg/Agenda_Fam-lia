@@ -1,6 +1,6 @@
 // Service worker: guarda a "casca" do app para abrir rápido e sem internet.
 // Os compromissos (/api) sempre vêm do servidor; sem conexão o app usa a cópia salva no aparelho.
-const VERSAO = 'agenda-v4';
+const VERSAO = 'agenda-v5';
 const CASCA = [
   '/', '/css/app.css', '/js/app.js', '/js/compras.js', '/manifest.webmanifest',
   '/icons/favicon.svg', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/apple-touch-icon.png',

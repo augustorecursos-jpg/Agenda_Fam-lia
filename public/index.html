@@ -21,13 +21,13 @@
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <symbol id="logo" viewBox="0 0 32 32"><defs><linearGradient id="g" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#17397d"/><stop offset="1" stop-color="#005ea4"/></linearGradient></defs><rect width="32" height="32" rx="8" fill="url(#g)" stroke="#20b8d5" stroke-opacity=".5"/><path d="M7 25 14.5 8h2.5l7 17" fill="none" stroke="#fff" stroke-width="3" stroke-linejoin="round"/><path d="M9.5 19.5c5-1 9-4 13-10" fill="none" stroke="#20b8d5" stroke-width="2.6" stroke-linecap="round"/><path d="m18.5 8.5 5 .5-.6 5" fill="none" stroke="#20b8d5" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="logo" viewBox="0 0 64 64"><defs><linearGradient id="lgg" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#17397d"/><stop offset="1" stop-color="#005ea4"/></linearGradient><clipPath id="lge"><rect width="32" height="64"/></clipPath><clipPath id="lgd"><rect x="32" width="32" height="64"/></clipPath></defs><rect x=".75" y=".75" width="62.5" height="62.5" rx="13.5" fill="url(#lgg)" stroke="#b3d8eb" stroke-opacity=".45" stroke-width="1.5"/><g transform="translate(32 32) scale(1) translate(-32 -32)"><path d="M10 29 32 11l22 18" fill="none" stroke="#b3d8eb" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><rect x="16" y="26" width="32" height="27" rx="5" fill="#fff"/><path d="M16 31a5 5 0 0 1 5-5h22a5 5 0 0 1 5 5v2H16z" fill="#20b8d5"/><path d="M32 51C21 43 21 34 27 34C30 34 32 36.5 32 38C32 36.5 34 34 37 34C43 34 43 43 32 51Z" fill="#005ea4" clip-path="url(#lge)"/><path d="M32 51C21 43 21 34 27 34C30 34 32 36.5 32 38C32 36.5 34 34 37 34C43 34 43 43 32 51Z" fill="#20b8d5" clip-path="url(#lgd)"/></g></symbol>
 </svg>
 
 <!-- Login -->
 <section class="entrar gutter" id="telaLogin" hidden>
   <form class="cartao-login" id="formLogin">
-    <div class="marca"><svg><use href="#logo"/></svg><div><b>Agenda da Família</b><small>AR Consultoria</small></div></div>
+    <div class="marca"><svg><use href="#logo"/></svg><div><b>Agenda da Família</b><small>por AR Consultoria</small></div></div>
     <h1>Entrar</h1>
     <p>Use o seu usuário. Vocês dois veem e editam a mesma agenda.</p>
     <label class="c">USUÁRIO<input type="text" id="lLogin" autocomplete="username" autocapitalize="none" required></label>
@@ -41,7 +41,7 @@
 <div id="telaApp" hidden>
   <header class="faixa">
     <div class="faixa-in gutter">
-      <div class="marca"><svg><use href="#logo"/></svg><div><b>Agenda da Família</b><small>AR Consultoria</small></div></div>
+      <div class="marca"><svg><use href="#logo"/></svg><div><b>Agenda da Família</b><small>por AR Consultoria</small></div></div>
       <nav class="abas" aria-label="Seções">
         <button class="aba" data-aba="agenda" aria-current="page"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Agenda</button>
         <button class="aba" data-aba="compras"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2.5l2.2 11.2a2 2 0 0 0 2 1.6h7.6a2 2 0 0 0 2-1.5L21 8H6.2"/><circle cx="10" cy="20.5" r="1.3"/><circle cx="17" cy="20.5" r="1.3"/></svg>Compras<span class="contador" id="contCompras" hidden></span></button>
